@@ -15,13 +15,22 @@ object Main:
   def main(args: Array[String]): Unit = ???
 
   val epsilon = 0
+  val alpha = 0
+  val gammma = 0
 
   def epoch[S,A](state : S, qtable : QTable[S,A], rng : RNG, state_apply_action : (S,A) => (S,Double)): (S, QTable[S,A]) =
-    val optimal_action     = qtable.policy(rng)._2.get(state).get
-    val (newState, reward) = state_apply_action(state,optimal_action)
-    val updated_reward_map = qtable.get(state).get.updated(optimal_action, reward)
+    val chosen_action      = qtable.policy(rng)._2.get(state).get
+    val (newState, reward) = state_apply_action(state,chosen_action)
+    val chosen_action_*    = qtable.policy(rng)._2.get(newState).get //rng?
+    val current_action_val = qtable.get(state).get(chosen_action)
+    val new_action_val     = qtable.get(newState).get(chosen_action_*)
+    val newReward          = current_action_val + alpha * (reward + gamma * new_action_val - current_action_val)
+    val updated_reward_map = qtable.get(state).get.updated(chosen_action, newReward)
     val newQTable          = qtable.updated(state,updated_reward_map)
     (newState, newQTable)
+
+  def episode[S,A](state : S, qtable : QTable[S,A], rng : RNG, state_apply_action : (S,A) => (S,Double)) : S =
+    ???
 
   type Policy[S,A] = (RNG, Map[S,A])
     extension[S, A](qtable: QTable[S, A])
