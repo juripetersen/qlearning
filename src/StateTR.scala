@@ -1,3 +1,5 @@
+package src
+
 import scala.util.control.TailCalls.*
 
 opaque type StateTR[S, +A] = S => TailRec[(A, S)]
