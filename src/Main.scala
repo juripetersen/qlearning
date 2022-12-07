@@ -2,45 +2,68 @@ package src
 
 
 import scala.util.Random
-
 import src.State.RNG
+import src.State.RNG.{double, nonNegativeInt}
+
+import java.security.Policy
+import scala.annotation.tailrec
 
 object Main:
-
-
-  opaque type QTable[S,A] = Map[S,Map[A,Double]]
+  type QTable[S,A] = Map[S,Map[A,Double]]
     def table_cons[S,A](state_keys: List[S], action_keys: List[A]): QTable[S,A] =
       state_keys.map(s => (s, action_keys.map(a => (a,0.0)).toMap)).toMap
-    
-  def main(args: Array[String]): Unit = ???
 
-  val epsilon = 0
-  val alpha = 0
-  val gammma = 0
+  val epsilon = 0.1
+  val alpha = 0.1
+  val gamma = 1.0
+  trait Environment[State,Action]:
+    def possible_actions(currentState: State): List[Action]
+    def step(currentState:State, action_taken:Action): (State,Double)
+    def isTerminal(state:State): Boolean
 
-  def epoch[S,A](state : S, qtable : QTable[S,A], rng : RNG, state_apply_action : (S,A) => (S,Double)): (S, QTable[S,A]) =
-    val chosen_action      = qtable.policy(rng)._2.get(state).get
-    val (newState, reward) = state_apply_action(state,chosen_action)
-    val chosen_action_*    = qtable.policy(rng)._2.get(newState).get //rng?
-    val current_action_val = qtable.get(state).get(chosen_action)
-    val new_action_val     = qtable.get(newState).get(chosen_action_*)
-    val newReward          = current_action_val + alpha * (reward + gamma * new_action_val - current_action_val)
-    val updated_reward_map = qtable.get(state).get.updated(chosen_action, newReward)
-    val newQTable          = qtable.updated(state,updated_reward_map)
-    (newState, newQTable)
+  def epoch[S,A](state : S, q_table : QTable[S,A], rng : RNG, state_apply_action : (S,A) => (S,Double),environment: Environment[S,A]): (S, QTable[S,A], RNG) =
+    val (policy, new_rng) = q_table.policy(rng,environment)
+    val chosen_action = policy(state)
+    val (new_state, reward) = state_apply_action(state,chosen_action)
+    val chosen_action_* = policy(new_state)//rng?
+    val current_action_val = q_table(state)(chosen_action)
+    val new_action_val = q_table(new_state)(chosen_action_*)
+    val newReward = current_action_val + alpha * (reward + gamma * new_action_val - current_action_val) //is this correct?
+    val updated_reward_map = q_table(state).updated(chosen_action, newReward)
+    val newQTable = q_table.updated(state,updated_reward_map)
+    (new_state, newQTable, new_rng)
 
-  def episode[S,A](state : S, qtable : QTable[S,A], rng : RNG, state_apply_action : (S,A) => (S,Double)) : S =
-    ???
+  @tailrec
+  def episode[S,A](state : S, environment: Environment[S,A], q_table : QTable[S,A], rng : RNG, state_apply_action : (S,A) => (S,Double)) : QTable[S,A] =
+    val epoch_val = epoch(state,q_table,rng,state_apply_action,environment)
+    println(epoch_val)
+    val new_state = epoch_val._1
+    val new_q_table = epoch_val._2
+    if environment.isTerminal(new_state) then new_q_table else episode(new_state,environment,new_q_table, rng, state_apply_action)
 
-  type Policy[S,A] = (RNG, Map[S,A])
-    extension[S, A](qtable: QTable[S, A])
-      def policy(rng : RNG): Policy[S, A] =
-        (rng.nextInt._2, qtable.map { (s, m) => (s, epsilon_greedy(rng, m, epsilon)._1) }.toMap)
 
-    def epsilon_greedy[S,A](rng : RNG, actions: Map[A,Double], epsilon: Double): (A,RNG) =
-      val randInt = rng.nextInt
-      if (randInt._1 < epsilon) then (actions.keys.toList((RNG.double(rng)._1/Double.MaxValue * actions.keys.toList.length).toInt),randInt._2)
-      else (actions.toList.maxBy(_._2)._1,randInt._2)
+
+  type Policy[S,A] = Map[S,A]
+    extension[S, A](q_table: QTable[S, A])
+      def policy(rng : RNG, environment: Environment[S,A]): (Policy[S, A], RNG) =
+        val size = q_table.size-1
+
+        @tailrec
+        def step(count: Int, r: RNG, policy: Policy[S,A]): (Policy[S,A], RNG) =
+          if count <= 0 then (policy ,r)
+          else
+            val (v : Double, rn : RNG) = double(r);
+            val cur_state = q_table.keys.toList(count)
+            val possible_actions = environment.possible_actions(cur_state)
+            val actions = q_table(cur_state).filter((a,r) => possible_actions.contains(a))
+            step(count - 1, rn, policy + (q_table.keys.toList(count) -> epsilon_greedy(v,actions,epsilon)))
+        step(size, rng, Map.empty[S,A])
+
+
+    def epsilon_greedy[S,A](randDouble: Double, actions: Map[A,Double], epsilon: Double): A =
+      println("possible actions: " + actions + " randgen: " + randDouble + " " + epsilon + " picking " + actions.keys.toList((randDouble * actions.size).toInt % actions.size))
+      if (randDouble < epsilon) then actions.keys.toList((randDouble * actions.size).toInt % actions.size)
+      else actions.toList.maxBy(_._2)._1
 
 
   def Q[S,A](state: S, list: A): QTable[S,A] = ???
