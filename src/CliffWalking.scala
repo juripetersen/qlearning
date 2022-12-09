@@ -14,13 +14,7 @@ object CliffWalking:
 
   implicit val environment : Environment[Location,Move] = new Environment[Location,Move]:
     def isTerminal(state:Location): Boolean = state match
-      case Location(11,0) => true
-      case Location(0,0) => false
       case Location(_,0) => true
-      case Location(_,4) => true
-      case Location(12, _) => true
-      case Location(-1,_) => true
-      case Location(_,-1) => true
       case Location(_,_) => false
 
     def possible_actions(currentState: Location): List[Move] = currentState match
@@ -61,11 +55,12 @@ object CliffWalking:
 
     @tailrec
     def step(count: Int, environment: Environment[Location,Move], q_table: QTable[Location,Move], rng: RNG): QTable[Location,Move] =
+      println("stepping ")
       if count <= 0 then q_table
       else
         val new_q_table = episode(Location(0,0), environment, q_table, rng.nextInt._2, environment.step)
-        step(count-1, environment, new_q_table, rng.nextInt._2)
+        step(count-1, environment, new_q_table, rng.nextInt._2.nextInt._2)
 
     val resulting_q_table = step(count = 400, environment, q_table, rng)
-    println(resulting_q_table(Location(0,0)))
+    println(resulting_q_table)
 
