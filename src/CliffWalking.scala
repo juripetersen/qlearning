@@ -63,8 +63,8 @@ object CliffWalking:
     def step(count: Int, environment: Environment[Location,Move], q_table: QTable[Location,Move], rng: RNG): QTable[Location,Move] =
       if count <= 0 then q_table
       else
-        val new_q_table = episode(Location(0,0), environment, q_table, rng, environment.step)
-        step(count-1, environment, new_q_table, rng)
+        val new_q_table = episode(Location(0,0), environment, q_table, rng.nextInt._2, environment.step)
+        step(count-1, environment, new_q_table, rng.nextInt._2)
 
     val resulting_q_table = step(count = 400, environment, q_table, rng)
     println(resulting_q_table(Location(0,0)))
