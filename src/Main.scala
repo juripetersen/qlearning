@@ -22,22 +22,23 @@ object Main:
     def isTerminal(state:State): Boolean
 
   def epoch[S,A](state : S, q_table : QTable[S,A], rng : RNG, state_apply_action : (S,A) => (S,Double),environment: Environment[S,A]): (S, QTable[S,A], RNG) =
-    val (policy, new_rng) = q_table.policy(rng,environment)
-    val chosen_action = policy(state)
+    val (policy, new_rng)   = q_table.policy(rng,environment)
+    val chosen_action       = policy(state)
     val (new_state, reward) = state_apply_action(state,chosen_action)
-    val chosen_action_* = policy(new_state)//rng?
-    val current_action_val = q_table(state)(chosen_action)
-    val new_action_val = q_table(new_state)(chosen_action_*)
-    val newReward = current_action_val + alpha * (reward + gamma * new_action_val - current_action_val) //is this correct?
-    val updated_reward_map = q_table(state).updated(chosen_action, newReward)
-    val newQTable = q_table.updated(state,updated_reward_map)
+    val chosen_action_*     = policy(new_state)
+    val current_action_val  = q_table(state)(chosen_action)
+    val new_action_val      = q_table(new_state)(chosen_action_*)
+    val newReward           = current_action_val + alpha * (reward + gamma * new_action_val - current_action_val) //is this correct?
+    val updated_reward_map  = q_table(state).updated(chosen_action, newReward)
+    val newQTable           = q_table.updated(state,updated_reward_map)
+    println(newQTable)
+
     (new_state, newQTable, new_rng)
 
   @tailrec
   def episode[S,A](state : S, environment: Environment[S,A], q_table : QTable[S,A], rng : RNG, state_apply_action : (S,A) => (S,Double)) : QTable[S,A] =
-    val epoch_val = epoch(state,q_table,rng,state_apply_action,environment)
-    println(epoch_val)
-    val new_state = epoch_val._1
+    val epoch_val   = epoch(state,q_table,rng,state_apply_action,environment)
+    val new_state   = epoch_val._1
     val new_q_table = epoch_val._2
     if environment.isTerminal(new_state) then new_q_table else episode(new_state,environment,new_q_table, rng, state_apply_action)
 
@@ -50,20 +51,26 @@ object Main:
 
         @tailrec
         def step(count: Int, r: RNG, policy: Policy[S,A]): (Policy[S,A], RNG) =
-          if count <= 0 then (policy ,r)
+          if count < 0 then (policy ,r)
           else
-            val (v : Double, rn : RNG) = double(r);
-            val cur_state = q_table.keys.toList(count)
-            val possible_actions = environment.possible_actions(cur_state)
-            val actions = q_table(cur_state).filter((a,r) => possible_actions.contains(a))
+            val (v: Double, rn: RNG) = double(r);
+            val cur_state            = q_table.keys.toList(count)
+            val actions              = q_table(cur_state)
+            //val possible_actions     = environment.possible_actions(cur_state)
+            //val actions              = q_table(cur_state).filter((a,r) => possible_actions.contains(a))
+
             step(count - 1, rn, policy + (q_table.keys.toList(count) -> epsilon_greedy(v,actions,epsilon)))
         step(size, rng, Map.empty[S,A])
 
 
     def epsilon_greedy[S,A](randDouble: Double, actions: Map[A,Double], epsilon: Double): A =
-      println("possible actions: " + actions + " randgen: " + randDouble + " " + epsilon + " picking " + actions.keys.toList((randDouble * actions.size).toInt % actions.size))
-      if (randDouble < epsilon) then actions.keys.toList((randDouble * actions.size).toInt % actions.size)
-      else actions.toList.maxBy(_._2)._1
+      if (randDouble < epsilon) then
+        println(actions.keys.toList((randDouble * actions.size).toInt % actions.size))
+        actions.keys.toList((randDouble * actions.size).toInt % actions.size)
+      else
+        println(actions.toList.maxBy(_._2))
+        println(actions.toList.maxBy(_._2)._1)
+        actions.toList.maxBy(_._2)._1
 
 
   def Q[S,A](state: S, list: A): QTable[S,A] = ???

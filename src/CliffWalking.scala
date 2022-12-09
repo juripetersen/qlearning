@@ -2,6 +2,8 @@ package src
 import src.Main.*
 import src.State.RNG
 
+import scala.annotation.tailrec
+
 
 object CliffWalking:
 
@@ -12,8 +14,13 @@ object CliffWalking:
 
   implicit val environment : Environment[Location,Move] = new Environment[Location,Move]:
     def isTerminal(state:Location): Boolean = state match
+      case Location(11,0) => true
       case Location(0,0) => false
       case Location(_,0) => true
+      case Location(_,4) => true
+      case Location(12, _) => true
+      case Location(-1,_) => true
+      case Location(_,-1) => true
       case Location(_,_) => false
 
     def possible_actions(currentState: Location): List[Move] = currentState match
@@ -29,15 +36,22 @@ object CliffWalking:
 
       case Location(_,_) => List(Move.Right,Move.Left,Move.Up,Move.Down)
 
+    def is_out_of_bounds(move: Move, currentState: Location): Boolean =
+      (currentState.x == 0 && move == Move.Left) || (currentState.x == 11 && move == Move.Right)
+        || (currentState.y == 3 && move == Move.Up) || (currentState.y == 0 && move == Move.Down)
+
     def step(currentState:Location, action_taken: Move): (Location,Double) = currentState match
-      case Location(12,0) => (currentState,0.0)
+      case Location(11,0) => (currentState,0.0)
+      case Location(x,y) if is_out_of_bounds(action_taken,currentState) => (currentState,-1.0)
+
       case Location(x,y)  =>
         val new_location = action_taken match
           case Move.Up    => Location(x,y+1)
           case Move.Down  => Location(x,y-1)
           case Move.Right => Location(x+1,y)
           case Move.Left  => Location(x-1,y)
-        (new_location,0.0)
+        (new_location,-0.1)
+
 
   def main(args: Array[String]): Unit =
     val actions = List(Move.Up,Move.Down,Move.Left,Move.Right)
@@ -45,5 +59,13 @@ object CliffWalking:
     val q_table = table_cons(states,actions)
     val rng = RNG.Simple(42)
 
-    episode(Location(0,0),environment,q_table, rng, environment.step)
+    @tailrec
+    def step(count: Int, environment: Environment[Location,Move], q_table: QTable[Location,Move], rng: RNG): QTable[Location,Move] =
+      if count <= 0 then q_table
+      else
+        val new_q_table = episode(Location(0,0), environment, q_table, rng, environment.step)
+        step(count-1, environment, new_q_table, rng)
+
+    val resulting_q_table = step(count = 400, environment, q_table, rng)
+    println(resulting_q_table(Location(0,0)))
 
