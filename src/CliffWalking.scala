@@ -49,6 +49,18 @@ object CliffWalking:
         else
           (new_location,0.0)
 
+  def traverse(qtable: QTable[Location, Move], current_location: Location): Unit =
+    if current_location != Location(11,0) then
+      print(current_location)
+      val chosen_action = qtable(current_location).toList.maxBy(_._2)
+      val new_state = chosen_action._1 match
+        case Move.Up    => Location(current_location.x, current_location.y + 1)
+        case Move.Down  => Location(current_location.x, current_location.y - 1)
+        case Move.Left  => Location(current_location.x - 1, current_location.y)
+        case Move.Right => Location(current_location.x + 1, current_location.y)
+      traverse(qtable, new_state)
+    else
+      println(current_location)
 
   def main(args: Array[String]): Unit =
     val actions = List(Move.Up,Move.Down,Move.Left,Move.Right)
@@ -65,5 +77,4 @@ object CliffWalking:
         step(count-1, environment, new_q_table, rng.nextInt._2.nextInt._2)
 
     val resulting_q_table = step(count = 400, environment, q_table, rng)
-    println(resulting_q_table(Location(1,2)))
-
+    println(traverse(resulting_q_table,Location(0,0)))
