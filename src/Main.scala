@@ -1,5 +1,4 @@
-package src
-
+package src.Main
 
 import scala.util.Random
 import src.State.RNG

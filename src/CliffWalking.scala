@@ -1,4 +1,5 @@
-package src
+package src.CliffWalking
+
 import src.Main.*
 import src.State.RNG
 
@@ -12,7 +13,7 @@ object CliffWalking:
   enum Move:
     case Up,Down,Right,Left
 
-  implicit val environment : Environment[Location,Move] = new Environment[Location,Move]:
+  implicit val environment : Main.Environment[Location,Move] = new Main.Environment[Location,Move]:
     def isTerminal(state:Location): Boolean = state match
       case Location(_,0) => true
       case Location(_,_) => false
@@ -49,7 +50,7 @@ object CliffWalking:
         else
           (new_location,0.0)
 
-  def traverse(qtable: QTable[Location, Move], current_location: Location): Unit =
+  def traverse(qtable: Main.QTable[Location, Move], current_location: Location): Unit =
     if current_location != Location(11,0) then
       print(current_location)
       val chosen_action = qtable(current_location).toList.maxBy(_._2)
@@ -65,15 +66,15 @@ object CliffWalking:
   def main(args: Array[String]): Unit =
     val actions = List(Move.Up,Move.Down,Move.Left,Move.Right)
     val states : List[Location] = List.tabulate(12,4)((a,b) => Location(a,b)).foldRight(List.empty)(_:++_)
-    val q_table = table_cons(states,actions)
+    val q_table = Main.table_cons(states,actions)
     val rng = RNG.Simple(42)
 
     @tailrec
-    def step(count: Int, environment: Environment[Location,Move], q_table: QTable[Location,Move], rng: RNG): QTable[Location,Move] =
+    def step(count: Int, environment: Main.Environment[Location,Move], q_table: Main.QTable[Location,Move], rng: RNG): Main.QTable[Location,Move] =
       //println("stepping ")
       if count <= 0 then q_table
       else
-        val new_q_table = episode(Location(0,0), environment, q_table, rng.nextInt._2, environment.step)
+        val new_q_table = Main.episode(Location(0,0), environment, q_table, rng.nextInt._2, environment.step)
         step(count-1, environment, new_q_table, rng.nextInt._2.nextInt._2)
 
     val resulting_q_table = step(count = 400, environment, q_table, rng)

@@ -11,8 +11,38 @@ import org.scalacheck.*
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Prop.*
 
+import src.CliffWalking.*
+import src.Main.*
+
 object QLearningSpec
   extends org.scalacheck.Properties("QLearning"):
 
-  property("Ex01.00: No tests now. We test this in Exercise 3") =
-    true
+  property("The selection of best action (as part of" +
+    " the ε-greedy selection) always returns the highest value action for the state") =
+    val map: Map[CliffWalking.Move, Double] = Map(
+      CliffWalking.Move.Up -> 0,
+      CliffWalking.Move.Down -> -10,
+      CliffWalking.Move.Left -> -10,
+      CliffWalking.Move.Right -> -1.90,
+      )
+
+    forAll(Gen.double, Gen.double) {
+      (randDouble: Double, randDoubleTwo: Double) =>
+        Main.epsilon_greedy(randDouble, randDoubleTwo, map, 0.0) == map.toList.maxBy(_._2)._1
+    }
+
+
+  property("The selection of best action (as part of" +
+    " the ε-greedy selection) always returns the highest value action for the state") =
+    val epsilon = 0.5
+    val map: Map[CliffWalking.Move, Double] = Map(
+      CliffWalking.Move.Up -> 0,
+      CliffWalking.Move.Down -> -10,
+      CliffWalking.Move.Left -> -10,
+      CliffWalking.Move.Right -> -1.90,
+      )
+
+    forAll(Gen.double, Gen.double) {
+      (randDouble: Double, randDoubleTwo: Double) =>
+        Main.epsilon_greedy(randDouble, randDoubleTwo, map, 0.0) == map.toList.maxBy(_._2)._1
+    }
