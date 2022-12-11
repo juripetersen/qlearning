@@ -44,23 +44,26 @@ object CliffWalking:
           case Move.Down  => Location(x,y-1)
           case Move.Right => Location(x+1,y)
           case Move.Left  => Location(x-1,y)
-        (new_location,-0.1)
+        if isTerminal(new_location) && new_location != Location(11,0) then
+          (currentState,-10)
+        else
+          (new_location,0.0)
 
 
   def main(args: Array[String]): Unit =
     val actions = List(Move.Up,Move.Down,Move.Left,Move.Right)
-    val states : List[Location] = List.tabulate(4,12)((a,b) => Location(a,b)).foldRight(List.empty)(_:++_)
+    val states : List[Location] = List.tabulate(12,4)((a,b) => Location(a,b)).foldRight(List.empty)(_:++_)
     val q_table = table_cons(states,actions)
     val rng = RNG.Simple(42)
 
     @tailrec
     def step(count: Int, environment: Environment[Location,Move], q_table: QTable[Location,Move], rng: RNG): QTable[Location,Move] =
-      println("stepping ")
+      //println("stepping ")
       if count <= 0 then q_table
       else
         val new_q_table = episode(Location(0,0), environment, q_table, rng.nextInt._2, environment.step)
         step(count-1, environment, new_q_table, rng.nextInt._2.nextInt._2)
 
     val resulting_q_table = step(count = 400, environment, q_table, rng)
-    println(resulting_q_table)
+    println(resulting_q_table(Location(1,2)))
 
