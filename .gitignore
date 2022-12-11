@@ -1,2 +1,4 @@
 *.class
 *.log
+./src/.bsp
+./src/.scala-build
