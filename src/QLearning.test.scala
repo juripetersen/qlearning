@@ -19,7 +19,7 @@ object QLearningSpec
 
   property("The selection of best action (as part of" +
     " the ε-greedy selection) always returns the highest value action for the state") =
-    val map: Map[CliffWalking.Move, Double] = Map(
+    val map: Map[Move, Double] = Map(
       Move.Up -> 0,
       Move.Down -> -10,
       Move.Left -> -10,
@@ -35,7 +35,7 @@ object QLearningSpec
   property("The selection of best action (as part of" +
     " the ε-greedy selection) always returns the highest value action for the state") =
     val epsilon = 0.5
-    val map: Map[CliffWalking.Move, Double] = Map(
+    val map: Map[Move, Double] = Map(
       Move.Up -> 0,
       Move.Down -> -10,
       Move.Left -> -10,
