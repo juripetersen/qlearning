@@ -1,3 +1,5 @@
+// Authors Mads Sejer Pedersen, Martin List Syberg, Juri Petersen
+
 //> using target { scope "test" }
 //> using scala "3.2.1"
 //> using lib "org.scalacheck::scalacheck:1.16.0"

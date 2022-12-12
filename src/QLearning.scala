@@ -1,3 +1,5 @@
+// Authors Mads Sejer Pedersen, Martin List Syberg, Juri Petersen
+
 package adpro.rl
 
 import scala.util.Random

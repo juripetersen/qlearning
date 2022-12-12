@@ -1,3 +1,5 @@
+// Authors Mads Sejer Pedersen, Martin List Syberg, Juri Petersen
+
 package adpro.rl
 
 import adpro.rl.QLearning.*
@@ -63,5 +65,4 @@ object CliffWalking:
         step(count-1, environment, newQTable, rng.nextInt._2.nextInt._2)
 
     val finalQTable = step(4000, environment, qtable, rng)
-    println(finalQTable)
     println(traverse(finalQTable, Location(0,0)))
