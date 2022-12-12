@@ -1,10 +1,10 @@
-package src.CliffWalking
+package adpro.rl
 
-import src.Main.*
-import src.State.RNG
+import adpro.rl.QLearning.*
+import adpro.rl.QLearning.QTable
+import adpro.rl.RNG
 
 import scala.annotation.tailrec
-
 
 object CliffWalking:
 
@@ -13,69 +13,52 @@ object CliffWalking:
   enum Move:
     case Up,Down,Right,Left
 
-  implicit val environment : Main.Environment[Location,Move] = new Main.Environment[Location,Move]:
+  implicit val environment : Environment[Location,Move] = new Environment[Location,Move]:
     def isTerminal(state:Location): Boolean = state match
-      case Location(_,0) => true
-      case Location(_,_) => false
+      case Location(_, 0) => true
+      case Location(_, _) => false
 
-    def possible_actions(currentState: Location): List[Move] = currentState match
-      case Location(0,y) => y match
-        case 3 => List(Move.Right, Move.Down)
-        case 0 => List(Move.Right, Move.Up)
-        case _ => List(Move.Up, Move.Right, Move.Down)
-
-      case Location(x,3) => x match
-        case 11 => List(Move.Left,Move.Down)
-        case 0  => List(Move.Right,Move.Down)
-        case _  => List(Move.Right,Move.Left)
-
-      case Location(_,_) => List(Move.Right,Move.Left,Move.Up,Move.Down)
-
-    def is_out_of_bounds(move: Move, currentState: Location): Boolean =
+    def isOutOfBounds(move: Move, currentState: Location): Boolean =
       (currentState.x == 0 && move == Move.Left) || (currentState.x == 11 && move == Move.Right)
         || (currentState.y == 3 && move == Move.Up) || (currentState.y == 0 && move == Move.Down)
 
-    def step(currentState:Location, action_taken: Move): (Location,Double) = currentState match
-      case Location(11,0) => (currentState,0.0)
-      case Location(x,y) if is_out_of_bounds(action_taken,currentState) => (currentState,-1.0)
+    def step(currentState:Location, actionTaken: Move): (Location,Double) = currentState match
+      case Location(11, 0) => (currentState,0.0)
+      case Location(x, y) if isOutOfBounds(actionTaken, currentState) => (currentState, -1.0)
 
       case Location(x,y)  =>
-        val new_location = action_taken match
-          case Move.Up    => Location(x,y+1)
-          case Move.Down  => Location(x,y-1)
-          case Move.Right => Location(x+1,y)
-          case Move.Left  => Location(x-1,y)
-        if isTerminal(new_location) && new_location != Location(11,0) then
-          (currentState,-10)
+        val newLocation = actionTaken match
+          case Move.Up    => Location(x, y+1)
+          case Move.Down  => Location(x, y-1)
+          case Move.Right => Location(x+1, y)
+          case Move.Left  => Location(x-1, y)
+        if isTerminal(newLocation) && newLocation != Location(11,0) then
+          (currentState, -10)
         else
-          (new_location,0.0)
+          (newLocation, 0.0)
 
-  def traverse(qtable: Main.QTable[Location, Move], current_location: Location): Unit =
-    if current_location != Location(11,0) then
-      print(current_location)
-      val chosen_action = qtable(current_location).toList.maxBy(_._2)
-      val new_state = chosen_action._1 match
-        case Move.Up    => Location(current_location.x, current_location.y + 1)
-        case Move.Down  => Location(current_location.x, current_location.y - 1)
-        case Move.Left  => Location(current_location.x - 1, current_location.y)
-        case Move.Right => Location(current_location.x + 1, current_location.y)
-      traverse(qtable, new_state)
-    else
-      println(current_location)
+  def traverse(qtable: QTable[Location, Move], currentLocation: Location): Unit =
+    print(currentLocation)
+    if currentLocation != Location(11, 0) then
+      val newState = qtable(currentLocation).toList.maxBy(_._2)._1 match
+        case Move.Up    => Location(currentLocation.x, currentLocation.y + 1)
+        case Move.Down  => Location(currentLocation.x, currentLocation.y - 1)
+        case Move.Left  => Location(currentLocation.x - 1, currentLocation.y)
+        case Move.Right => Location(currentLocation.x + 1, currentLocation.y)
+      traverse(qtable, newState)
 
   def main(args: Array[String]): Unit =
     val actions = List(Move.Up,Move.Down,Move.Left,Move.Right)
     val states : List[Location] = List.tabulate(12,4)((a,b) => Location(a,b)).foldRight(List.empty)(_:++_)
-    val q_table = Main.table_cons(states,actions)
+    val qtable = QTable[Location, Move](states,actions)
     val rng = RNG.Simple(42)
 
     @tailrec
-    def step(count: Int, environment: Main.Environment[Location,Move], q_table: Main.QTable[Location,Move], rng: RNG): Main.QTable[Location,Move] =
-      //println("stepping ")
-      if count <= 0 then q_table
+    def step(count: Int, environment: Environment[Location,Move], qtable: QTable[Location,Move], rng: RNG): QTable[Location,Move] =
+      if count <= 0 then qtable
       else
-        val new_q_table = Main.episode(Location(0,0), environment, q_table, rng.nextInt._2, environment.step)
-        step(count-1, environment, new_q_table, rng.nextInt._2.nextInt._2)
+        val newQTable = episode(Location(0,0), environment, qtable, rng.nextInt._2, environment.step)
+        step(count-1, environment, newQTable, rng.nextInt._2.nextInt._2)
 
-    val resulting_q_table = step(count = 400, environment, q_table, rng)
-    println(traverse(resulting_q_table,Location(0,0)))
+    val finalQTable = step(400, environment, qtable, rng)
+    println(traverse(finalQTable, Location(0,0)))
