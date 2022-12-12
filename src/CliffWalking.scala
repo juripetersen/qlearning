@@ -15,6 +15,7 @@ object CliffWalking:
 
   implicit val environment : Environment[Location,Move] = new Environment[Location,Move]:
     def isTerminal(state:Location): Boolean = state match
+      case Location(0,0) => false
       case Location(_, 0) => true
       case Location(_, _) => false
 
@@ -39,6 +40,7 @@ object CliffWalking:
 
   def traverse(qtable: QTable[Location, Move], currentLocation: Location): Unit =
     print(currentLocation)
+    //println(qtable)
     if currentLocation != Location(11, 0) then
       val newState = qtable(currentLocation).toList.maxBy(_._2)._1 match
         case Move.Up    => Location(currentLocation.x, currentLocation.y + 1)
@@ -60,5 +62,6 @@ object CliffWalking:
         val newQTable = episode(Location(0,0), environment, qtable, rng.nextInt._2, environment.step)
         step(count-1, environment, newQTable, rng.nextInt._2.nextInt._2)
 
-    val finalQTable = step(400, environment, qtable, rng)
+    val finalQTable = step(4000, environment, qtable, rng)
+    println(finalQTable)
     println(traverse(finalQTable, Location(0,0)))

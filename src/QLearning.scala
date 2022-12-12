@@ -64,10 +64,8 @@ object QLearning:
         step(size, rng.nextInt._2, Map.empty[S,A])
 
     def epsilonGreedy[S,A](randDouble: Double, randDouble2: Double, actions: Map[A,Double], epsilon: Double): A =
+      //println("rng: " + randDouble + " " + randDouble2)
       if (randDouble < epsilon)
         actions.keys.toList((randDouble2 * actions.size).toInt % actions.size)
       else
         actions.toList.maxBy(_._2)._1
-
-
-
